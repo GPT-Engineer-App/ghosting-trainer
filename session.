@@ -1,0 +1,85 @@
+// src/pages/Index.jsx
+import { useState, useEffect, useCallback } from "react";
+import { Box, Button, VStack, Heading, Text, Container, CircularProgress, CircularProgressLabel, useToast } from "@chakra-ui/react";
+import { FaPlay, FaStop } from "react-icons/fa";
+
+const courtPositions = ["Front Left", "Front Right", "Back Left", "Back Right", "Center"];
+
+const getRandomPosition = () => {
+  const randomIndex = Math.floor(Math.random() * courtPositions.length);
+  return courtPositions[randomIndex];
+};
+
+const Index = () => {
+  const [isActive, setIsActive] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(60);
+  const [position, setPosition] = useState("");
+  const [intervalId, setIntervalId] = useState(null);
+  const toast = useToast();
+
+  const startGhosting = useCallback(() => {
+    if (isActive) return;
+
+    setIsActive(true);
+    setPosition(getRandomPosition());
+    const id = setInterval(() => {
+      setTimeLeft((time) => (time > 0 ? time - 1 : 0));
+    }, 1000);
+    setIntervalId(id);
+  }, [isActive]);
+
+  const stopGhosting = () => {
+    setIsActive(false);
+    clearInterval(intervalId);
+    setIntervalId(null);
+    setTimeLeft(60);
+    setPosition("");
+    toast({
+      title: "Training completed.",
+      description: "Great job! You have finished your ghosting session.",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
+  };
+
+  useEffect(() => {
+    if (timeLeft === 0) {
+      stopGhosting();
+    }
+  }, [timeLeft]);
+
+  useEffect(() => {
+    if (isActive) {
+      const timeoutId = setTimeout(() => {
+        setPosition(getRandomPosition());
+      }, 2000);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [position, isActive]);
+
+  return (
+    <Container centerContent>
+      <VStack spacing={8} mt={10}>
+        <Heading as="h1">Racket Sports Ghosting Trainer</Heading>
+        <CircularProgress value={(timeLeft / 60) * 100} size="120px" thickness="8px">
+          <CircularProgressLabel>{timeLeft}s</CircularProgressLabel>
+        </CircularProgress>
+        <Text fontSize="2xl">{position}</Text>
+        <Box>
+          {isActive ? (
+            <Button leftIcon={<FaStop />} colorScheme="red" onClick={stopGhosting}>
+              Stop
+            </Button>
+          ) : (
+            <Button leftIcon={<FaPlay />} colorScheme="teal" onClick={startGhosting}>
+              Start
+            </Button>
+          )}
+        </Box>
+      </VStack>
+    </Container>
+  );
+};
+
+export default Index;
